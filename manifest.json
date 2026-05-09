@@ -20,7 +20,7 @@
     }
   },
 
-  "permissions": [
+    "permissions": [
     "webRequest",
     "webRequestBlocking",
     "cookies",
@@ -28,7 +28,7 @@
     "tabs",
     "privacy",
     "<all_urls>"
-  ],
+    ],
 
   "background": {
     "scripts": ["privacy_monitor.js"]

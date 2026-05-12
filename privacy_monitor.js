@@ -37,11 +37,12 @@ function isFirstPartyOrigin(origin, pageUrl) {
 
 function initTab(tabId, url) {
   tabData[tabId] = {
-    url:          url,
-    thirdParties: [],
-    cookies:      [],
-    supercookies: [],
-    storage:      []
+    url:            url,
+    thirdParties:   [],
+    cookies:        [],
+    supercookies:   [],
+    storage:        [],
+    fingerprinting: []
   };
 }
 
@@ -182,19 +183,21 @@ browser.webRequest.onHeadersReceived.addListener(
 browser.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   if (message.type === "GET_DATA") {
     const data = tabData[message.tabId] || {
-      url:          "",
-      thirdParties: [],
-      cookies:      [],
-      supercookies: [],
-      storage:      []
+      url:            "",
+      thirdParties:   [],
+      cookies:        [],
+      supercookies:   [],
+      storage:        [],
+      fingerprinting: []
     };
 
     sendResponse({
-      url:          data.url,
-      thirdParties: data.thirdParties,
-      cookies:      data.cookies,
-      supercookies: data.supercookies,
-      storage:      data.storage
+      url:            data.url,
+      thirdParties:   data.thirdParties,
+      cookies:        data.cookies,
+      supercookies:   data.supercookies,
+      storage:        data.storage,
+      fingerprinting: data.fingerprinting
     });
     return;
   }
@@ -218,5 +221,37 @@ browser.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       sessionStorage: message.sessionStorage || [],
       indexedDB:      message.indexedDB      || []
     });
+    return;
+  }
+
+  if (message.type === "FINGERPRINT_EVENT") {
+    const tabId = sender.tab && sender.tab.id;
+    if (tabId == null || !tabData[tabId]) return;
+
+    const fp = tabData[tabId].fingerprinting;
+
+    const existing = fp.find(function(f) {
+      return f.origin === message.origin
+          && f.api    === message.api
+          && f.method === message.method;
+    });
+
+    if (existing) {
+      existing.count++;
+      if (message.extra && message.extra.debugRenderer) {
+        existing.debugRenderer = true;
+      }
+    } else {
+      fp.push({
+        origin:        message.origin,
+        isFirstParty:  isFirstPartyOrigin(message.origin, tabData[tabId].url),
+        api:           message.api,
+        method:        message.method,
+        count:         1,
+        stack:         message.stack || "",
+        debugRenderer: !!(message.extra && message.extra.debugRenderer),
+        firstSeen:     Date.now()
+      });
+    }
   }
 });

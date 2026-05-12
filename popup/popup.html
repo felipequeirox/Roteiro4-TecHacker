@@ -14,6 +14,7 @@
   <button class="tab-btn active" data-tab="third-parties">3rd Parties</button>
   <button class="tab-btn" data-tab="cookies">Cookies</button>
   <button class="tab-btn" data-tab="storage">Storage</button>
+  <button class="tab-btn" data-tab="fingerprint">Fingerprint</button>
 </nav>
 
   <div id="tab-third-parties" class="tab-content active">
@@ -70,6 +71,17 @@
     <div class="subsection-title" style="margin-top:10px">IndexedDB</div>
     <ul id="list-indexeddb">
       <li class="empty">Nenhum banco IndexedDB detectado.</li>
+    </ul>
+  </div>
+
+  <div id="tab-fingerprint" class="tab-content">
+    <div class="section-header">
+      Fingerprinting
+      <span id="count-fingerprint" class="badge badge-red">0</span>
+    </div>
+    <div id="fingerprint-summary" class="cookie-summary"></div>
+    <ul id="list-fingerprint">
+      <li class="empty">Nenhuma tentativa detectada.</li>
     </ul>
   </div>
 

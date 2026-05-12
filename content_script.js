@@ -61,3 +61,30 @@
 
   window.addEventListener("storage", reportStorage);
 })();
+
+(function injectFingerprintHooks() {
+  try {
+    const script = document.createElement("script");
+    script.src   = browser.runtime.getURL("injected.js");
+    script.async = false;
+
+    (document.head || document.documentElement).prepend(script);
+    script.onload = function () { this.remove(); };
+  } catch (e) {}
+})();
+
+window.addEventListener("message", function (event) {
+  if (event.source !== window) return;
+  const data = event.data;
+  if (!data || data.__privacyMonitor !== true) return;
+
+  browser.runtime.sendMessage({
+    type:     "FINGERPRINT_EVENT",
+    origin:   window.location.origin,
+    frameUrl: window.location.href,
+    api:      data.api,
+    method:   data.method,
+    extra:    data.extra,
+    stack:    data.stack
+  }).catch(() => {});
+});

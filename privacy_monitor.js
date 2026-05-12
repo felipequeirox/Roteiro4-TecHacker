@@ -2,15 +2,15 @@ const tabData = {};
 
 function getRootDomain(hostname) {
   if (!hostname) return "";
-  
+
   const parts = hostname.split(".");
   const lastTwo = parts.slice(-2).join(".");
   const twoPartSuffixes = ["com.br", "org.br", "net.br", "gov.br", "co.uk", "com.au"];
-  
+
   if (twoPartSuffixes.includes(lastTwo) && parts.length > 2) {
     return parts.slice(-3).join(".");
   }
-  
+
   return parts.slice(-2).join(".");
 }
 
@@ -18,8 +18,18 @@ function isThirdParty(requestUrl, pageUrl) {
   try {
     const requestDomain = getRootDomain(new URL(requestUrl).hostname);
     const pageDomain    = getRootDomain(new URL(pageUrl).hostname);
-    
+
     return requestDomain !== pageDomain && requestDomain !== "";
+  } catch (e) {
+    return false;
+  }
+}
+
+function isFirstPartyOrigin(origin, pageUrl) {
+  try {
+    const originDomain = getRootDomain(new URL(origin).hostname);
+    const pageDomain   = getRootDomain(new URL(pageUrl).hostname);
+    return originDomain === pageDomain;
   } catch (e) {
     return false;
   }
@@ -30,13 +40,14 @@ function initTab(tabId, url) {
     url:          url,
     thirdParties: [],
     cookies:      [],
-    supercookies: []
+    supercookies: [],
+    storage:      []
   };
 }
 
 function classifyCookies(cookies, pageUrl) {
   let pageDomain;
-  
+
   try {
     pageDomain = getRootDomain(new URL(pageUrl).hostname);
   } catch (e) {
@@ -76,7 +87,7 @@ function scanCookies(tabId) {
 
 browser.tabs.onUpdated.addListener(function(tabId, changeInfo, tab) {
   if (!tab.url) return;
-  
+
   const isHttp = tab.url.startsWith("http://") || tab.url.startsWith("https://");
   if (!isHttp) return;
 
@@ -96,7 +107,7 @@ browser.tabs.onRemoved.addListener(function(tabId) {
 browser.webRequest.onBeforeRequest.addListener(
   function(details) {
     const tabId = details.tabId;
-    
+
     if (tabId < 0) return;
     if (details.type === "main_frame") return;
     if (!tabData[tabId]) return;
@@ -132,7 +143,7 @@ browser.webRequest.onBeforeRequest.addListener(
 browser.webRequest.onHeadersReceived.addListener(
   function(details) {
     const tabId = details.tabId;
-    
+
     if (tabId < 0) return;
     if (!tabData[tabId]) return;
 
@@ -174,14 +185,38 @@ browser.runtime.onMessage.addListener(function(message, sender, sendResponse) {
       url:          "",
       thirdParties: [],
       cookies:      [],
-      supercookies: []
+      supercookies: [],
+      storage:      []
     };
 
     sendResponse({
       url:          data.url,
       thirdParties: data.thirdParties,
       cookies:      data.cookies,
-      supercookies: data.supercookies
+      supercookies: data.supercookies,
+      storage:      data.storage
+    });
+    return;
+  }
+
+  if (message.type === "STORAGE_DATA") {
+    const tabId = sender.tab && sender.tab.id;
+    if (tabId == null || !tabData[tabId]) return;
+
+    const frameId = sender.frameId != null ? sender.frameId : 0;
+
+    tabData[tabId].storage = tabData[tabId].storage.filter(function(s) {
+      return !(s.origin === message.origin && s.frameId === frameId);
+    });
+
+    tabData[tabId].storage.push({
+      origin:         message.origin,
+      frameUrl:       message.frameUrl,
+      frameId:        frameId,
+      isFirstParty:   isFirstPartyOrigin(message.origin, tabData[tabId].url),
+      localStorage:   message.localStorage   || [],
+      sessionStorage: message.sessionStorage || [],
+      indexedDB:      message.indexedDB      || []
     });
   }
 });

@@ -7,10 +7,12 @@ browser.tabs.query({ active: true, currentWindow: true }).then(tabs => {
       if (!data) return;
       renderThirdParties(data);
       renderCookies(data);
+      renderStorage(data);
     })
     .catch(() => {
       renderThirdParties({ url: "", thirdParties: [] });
       renderCookies({ cookies: [], supercookies: [] });
+      renderStorage({ storage: [] });
     });
 });
 
@@ -105,4 +107,63 @@ function renderCookies(data) {
       </li>
     `).join("");
   }
+}
+
+function renderStorage(data) {
+  const storage = data.storage || [];
+
+  const allLocal   = [];
+  const allSession = [];
+  const allIDB     = [];
+
+  storage.forEach(s => {
+    s.localStorage.forEach(e =>
+      allLocal.push({ ...e, origin: s.origin, isFirstParty: s.isFirstParty }));
+    s.sessionStorage.forEach(e =>
+      allSession.push({ ...e, origin: s.origin, isFirstParty: s.isFirstParty }));
+    s.indexedDB.forEach(db =>
+      allIDB.push({ ...db, origin: s.origin, isFirstParty: s.isFirstParty }));
+  });
+
+  const total = allLocal.length + allSession.length + allIDB.length;
+  document.getElementById("count-storage").textContent = total;
+
+  const firstPartyOrigins = storage.filter(s => s.isFirstParty).length;
+  const thirdPartyOrigins = storage.filter(s => !s.isFirstParty).length;
+  const totalBytes = [...allLocal, ...allSession]
+    .reduce((acc, e) => acc + (e.size || 0), 0);
+
+  document.getElementById("storage-summary").innerHTML = `
+    <span class="summary-pill pill-first">1ª parte: ${firstPartyOrigins}</span>
+    <span class="summary-pill pill-third">3ª parte: ${thirdPartyOrigins}</span>
+    <span class="summary-pill pill-persist">~${totalBytes} chars</span>
+  `;
+
+  function renderList(elementId, entries, emptyLabel, isIDB) {
+    const el = document.getElementById(elementId);
+    if (entries.length === 0) {
+      el.innerHTML = `<li class="empty">Nenhum dado em ${emptyLabel}.</li>`;
+      return;
+    }
+    const sorted = [...entries].sort((a, b) =>
+      Number(a.isFirstParty) - Number(b.isFirstParty) ||
+      a.origin.localeCompare(b.origin)
+    );
+    el.innerHTML = sorted.map(e => `
+      <li>
+        <span class="name">${escapeHtml(isIDB ? e.name : e.key)}</span>
+        <span class="tag ${e.isFirstParty ? 'tag-first' : 'tag-third'}">
+          ${e.isFirstParty ? '1ª' : '3ª'}
+        </span>
+        <span class="expires">${escapeHtml(new URL(e.origin).hostname)}</span>
+        ${isIDB
+          ? `<span class="expires">v${e.version || '?'}</span>`
+          : `<span class="expires">${e.size} ch</span>`}
+      </li>
+    `).join("");
+  }
+
+  renderList("list-localstorage",   allLocal,   "localStorage",   false);
+  renderList("list-sessionstorage", allSession, "sessionStorage", false);
+  renderList("list-indexeddb",      allIDB,     "IndexedDB",      true);
 }

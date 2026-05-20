@@ -1,3 +1,35 @@
-Resumo Privacy Score (Temporário): O Privacy Score foi implementado como uma métrica heurística de 0 a 100, em que 100 representa maior respeito à privacidade e 0 representa maior risco. A pontuação começa em 100 e sofre descontos conforme a página apresenta sinais observáveis de rastreamento e exposição de dados. Foram consideradas cinco categorias: conexões de terceira parte, cookies e supercookies, armazenamento local, fingerprinting e possíveis técnicas de hijacking/hooking.
-Fingerprinting e third-party tracking receberam maior peso por serem técnicas persistentes, pouco visíveis ao usuário e difíceis de neutralizar. Cookies e storage receberam peso intermediário, pois são mecanismos comuns da web, mas ainda capazes de manter estado e correlacionar navegação. Hijacking/hooking recebeu peso menor em quantidade, mas com penalidade relevante quando detectado, por indicar comportamento potencialmente agressivo.
-Como resultado, o score não pretende afirmar com certeza absoluta que uma página é “segura” ou “insegura”, mas sim fornecer uma estimativa prática do nível de exposição à privacidade a partir de comportamentos observáveis no navegador.
+## Privacy Score (Versão Temporária)
+
+O **Privacy Score** é uma métrica heurística que vai de **0 a 100**:
+
+- **100** → maior respeito à privacidade
+- **0** → maior risco à privacidade
+
+A pontuação começa em 100 e sofre descontos sempre que a página apresenta sinais observáveis de rastreamento ou exposição de dados.
+
+---
+
+### Categorias avaliadas
+
+A análise considera cinco categorias de comportamento da página:
+
+- **Conexões de terceira parte** — requisições feitas para domínios externos
+- **Cookies e supercookies** — mecanismos clássicos de identificação
+- **Armazenamento local** — uso de `localStorage`, `sessionStorage` e similares
+- **Fingerprinting** — técnicas que identificam o usuário pelas características do navegador
+- **Hijacking / hooking** — possíveis interceptações de funções ou comportamentos do navegador
+
+---
+
+### Pesos atribuídos
+
+Cada categoria tem um peso diferente no cálculo final:
+
+- **Peso alto:** *Fingerprinting* e *Third-party tracking*
+  > São técnicas persistentes, pouco visíveis ao usuário e difíceis de neutralizar.
+
+- **Peso intermediário:** *Cookies* e *Storage*
+  > São mecanismos comuns na web, mas ainda permitem manter estado e correlacionar a navegação.
+
+- **Peso menor (em quantidade), mas com penalidade alta quando detectado:** *Hijacking / hooking*
+  > Aparece com menos frequência, porém indica um comportamento potencialmente agressivo.

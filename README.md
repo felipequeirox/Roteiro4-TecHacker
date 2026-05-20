@@ -7,8 +7,6 @@ O **Privacy Score** é uma métrica heurística que vai de **0 a 100**:
 
 A pontuação começa em 100 e sofre descontos sempre que a página apresenta sinais observáveis de rastreamento ou exposição de dados.
 
----
-
 ### Categorias avaliadas
 
 A análise considera cinco categorias de comportamento da página:
@@ -18,8 +16,6 @@ A análise considera cinco categorias de comportamento da página:
 - **Armazenamento local** — uso de `localStorage`, `sessionStorage` e similares
 - **Fingerprinting** — técnicas que identificam o usuário pelas características do navegador
 - **Hijacking / hooking** — possíveis interceptações de funções ou comportamentos do navegador
-
----
 
 ### Pesos atribuídos
 
